@@ -20,8 +20,8 @@ public:
   Point() : _x{0}, _y{0} {}
   /**
    * Instantiate a Point centered in (x, y)
-   * @param x the value of X dimension
-   * @param y the value of Y dimension
+   * @param [in] x the value of X dimension
+   * @param [in] y the value of Y dimension
    */
   Point(int x, int y) : _x(x), _y(y) {}
   int _x; ///< Position on the X axis
@@ -44,7 +44,7 @@ public:
   /**
    * Instantiates a degenerate Line out of \p point. The new line has a null
    * length, while its slope is undefined.
-   * @param point Starting point of Line segment.
+   * @param [in] point Starting point of Line segment.
    */
   explicit Line(Point point)
       : _start(point), _end{0, 0}, _length{0.0}, _degenerate{true} {}
@@ -55,7 +55,7 @@ public:
    * adjacent). If this was a degenerate Line, start and end points are set
    * and the segment line's slope and length are computed. If this was
    * already a proper Line only the length is updated.
-   * @param p Point to prepend or append to this Line.
+   * @param [in] p Point to prepend or append to this Line.
    */
   void addPoint(Point p);
 
@@ -76,8 +76,8 @@ public:
    * If this is a degenerate line, every point "right around" the Line's one
    * is adjacent. "Right around" is analytically expressed by the distance
    * between the two points being less than sqrt(2).
-   * @param p Point to test if it's adjacent to this Line.
-   * @return true if \p is adjacent. False otherwise.
+   * @param [in] p Point to test if it's adjacent to this Line.
+   * @return true if \p p is adjacent. False otherwise.
    */
   bool isAdjacient(Point p) const;
 
@@ -92,8 +92,8 @@ private:
 
 /**
  * Evaluates the euclidean distance between Point \p p and Point \p p.
- * @param p A Point
- * @param q A Point
+ * @param [in] p A Point
+ * @param [in] q A Point
  * @return euclidean distance between \p p and \p q.
  */
 double distance(Point p, Point q);
@@ -102,8 +102,8 @@ double distance(Point p, Point q);
  * Evaluates the slope of a Line passing through Points \p p and \p q. If p.X
  * equals q.X theoretically the slope would be +inf or -inf. In our case,
  * it is set to +DBL_MAX or -DBL_MAX. That's our representation of infinite.
- * @param p A Point
- * @param q A Point
+ * @param [in] p A Point
+ * @param [in] q A Point
  * @return slope of a Line passing through \p p and \p q
  */
 double slope(Point p, Point q);
