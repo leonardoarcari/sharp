@@ -12,7 +12,7 @@ double distance(Point p, Point q) {
 
 double slope(Point p, Point q) {
   if (p._x - q._x == 0)
-    return DBL_MAX;
+    return (p._y < q._y) ? -DBL_MAX : DBL_MAX;
   return (p._y - q._y) / (p._x - q._x);
 }
 
@@ -61,7 +61,7 @@ bool Line::isAdjacient(Point p) const {
       if (p._y == posSlope ? (_start._y + _slope) : (_start._y - _slope)) {
         return true;
       }
-    } else if (_slope == DBL_MAX &&
+    } else if (_slope == std::abs(DBL_MAX) &&
                (p._y == _start._y + 1 || p._y == _end._y - 1)) {
       // In case of a vertical line (approximated with _slope == DBL_MAX) a
       // point is adjacent if it comes right before _start (higher y value) or
