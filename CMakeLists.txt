@@ -13,7 +13,7 @@ if (OPENMP_FOUND)
 endif()
 
 # Compile
-set(SOURCE_FILES main.cpp sharp.h sharp.cpp)
+set(SOURCE_FILES main.cpp sharp.h sharp.cpp Line.cpp Line.h)
 add_executable(sharp ${SOURCE_FILES})
 
 # Linking

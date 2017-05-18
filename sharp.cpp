@@ -3,6 +3,7 @@
 //
 
 #include "sharp.h"
+#include "Line.h"
 #include <iostream>
 #include <memory>
 #include <omp.h>
@@ -100,16 +101,6 @@ void partialSLHT(const cv::Mat &testShape, SharpContext &context) {
       }
     }
   }
-}
-
-double distance(Point p, Point q) {
-  return std::sqrt(std::pow((p._x - q._x), 2) + std::pow((p._y - q._y), 2));
-}
-
-double slope(Point p, Point q) {
-  if (p._x - q._x == 0)
-    return DBL_MAX;
-  return (p._y - q._y) / (p._x - q._x);
 }
 
 SharpContext::SharpContext(unsigned int shapeSize, double minTheta,
