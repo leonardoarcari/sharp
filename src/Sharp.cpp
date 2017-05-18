@@ -2,8 +2,8 @@
 // Created by leonardoarcari on 17/05/17.
 //
 
-#include "sharp.h"
-#include "Line.h"
+#include "../include/Sharp.h"
+#include "../include/Line.h"
 #include <iostream>
 #include <memory>
 #include <omp.h>

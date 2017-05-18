@@ -1,4 +1,4 @@
-#include "sharp.h"
+#include "../include/Sharp.h"
 
 int main(int argc, char **argv) {
 
