@@ -5,14 +5,17 @@
 #ifndef SHARP_SHARP_H
 #define SHARP_SHARP_H
 
+#include "Line.h"
+
 #include <climits>
+#include <memory>
 #include <opencv/cv.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <string>
-#include <memory>
-#include "Line.h"
 
 namespace aapp {
+
+constexpr double pi() { return std::atan(1) * 4; }
 
 /**
  * A SharpContext is an instance of a SHARP algorithm execution. SHARP
@@ -43,9 +46,13 @@ namespace aapp {
  */
 class SharpContext {
 public:
-  using Slht = std::vector<std::vector<std::vector<std::unique_ptr<Line>>>>;
+  using Slht = std::vector<std::vector<std::vector<std::shared_ptr<Line>>>>;
   using Acc = std::vector<std::vector<bool>>;
   using Stirs = std::vector<std::vector<bool>>;
+
+  using SlhtContent = std::vector<std::unique_ptr<Line>>;
+  using AccContent = bool;
+  using StirsContent = bool;
 
   /**
    * Instantiates a SharpContext.
@@ -55,7 +62,7 @@ public:
    * @param [in] thetaStep The Theta step
    * @param [in] lenThreshold The length threshold
    */
-  SharpContext(unsigned int shapeSize, double minTheta, double maxTheta,
+  SharpContext(int shapeSize, double minTheta, double maxTheta,
                int thetaStep, double lenThreshold);
 
   /**
@@ -99,22 +106,28 @@ public:
   double maxDist() const { return _maxDist; }
 
 private:
-  unsigned int _shapeSize;
+  // SHARP parameters
+  int _shapeSize;
   double _minTheta;
   double _maxTheta;
   double _minDist;
   double _maxDist;
   int _thetaStep;
   double _lenThreshold;
-  unsigned int _orientations;
+  int _orientations;
 
-  constexpr static double maxSumSinCos = std::cos(45) + std::sin(45);
+  // Logging
+
+  // Convenient constexpr
+  constexpr static double
+      maxSumSinCos = std::cos(pi() / 4) + std::sin(pi() / 4);
 };
 
 void sharp(const std::string &testShape);
-static void partialSLHT(const cv::Mat &testShape, SharpContext &context);
+static SharpContext::Slht partialSLHT(const cv::Mat &testShape,
+                                      std::shared_ptr<SharpContext> &context);
 static void partialSignature(const SharpContext::Slht &slht,
-                             SharpContext &context);
+                             std::shared_ptr<SharpContext> &context);
 
 // Co-routines
 
@@ -127,16 +140,19 @@ static void partialSignature(const SharpContext::Slht &slht,
 static cv::Mat detectEdges(const cv::Mat &src);
 
 template<typename T>
-static T buildHough(unsigned int orientations, unsigned int distances) {
-  auto hough = T(orientations);
-  for (auto &orientation : hough) {
-    orientation.reserve(distances);
-  }
+static T buildHough(int orientations, int distances) {
+
+  using distV = typename T::value_type;
+  using lineV = typename distV::value_type;
+
+  auto hough = T(orientations, distV(distances, lineV()));
+
   return hough;
 }
 
 // Utility procedures
 static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);
+
 }
 
 #endif // SHARP_SHARP_H
