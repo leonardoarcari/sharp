@@ -13,8 +13,9 @@ if (OPENMP_FOUND)
 endif()
 
 # Compile
+set(EXTERNAL_FILES external/easyloggingpp_v9.94.2/easylogging++.h external/easyloggingpp_v9.94.2/easylogging++.cc)
 set(SOURCE_FILES src/main.cpp include/Sharp.h src/Sharp.cpp src/Line.cpp include/Line.h)
-add_executable(sharp ${SOURCE_FILES})
+add_executable(sharp ${SOURCE_FILES} ${EXTERNAL_FILES})
 
 # Linking
 target_link_libraries( sharp ${OpenCV_LIBS} )
