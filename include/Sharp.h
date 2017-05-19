@@ -9,6 +9,8 @@
 #include <opencv/cv.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <string>
+#include <memory>
+#include "Line.h"
 
 namespace aapp {
 
@@ -41,6 +43,10 @@ namespace aapp {
  */
 class SharpContext {
 public:
+  using Slht = std::vector<std::vector<std::vector<std::unique_ptr<Line>>>>;
+  using Acc = std::vector<std::vector<bool>>;
+  using Stirs = std::vector<std::vector<bool>>;
+
   /**
    * Instantiates a SharpContext.
    * @param [in] shapeSize The Shape size
@@ -107,6 +113,8 @@ private:
 
 void sharp(const std::string &testShape);
 static void partialSLHT(const cv::Mat &testShape, SharpContext &context);
+static void partialSignature(const SharpContext::Slht &slht,
+                             SharpContext &context);
 
 // Co-routines
 
@@ -117,6 +125,15 @@ static void partialSLHT(const cv::Mat &testShape, SharpContext &context);
  * @return an image whose non-zero pixels are the edges of shapes in \p src.
  */
 static cv::Mat detectEdges(const cv::Mat &src);
+
+template<typename T>
+static T buildHough(unsigned int orientations, unsigned int distances) {
+  auto hough = T(orientations);
+  for (auto &orientation : hough) {
+    orientation.reserve(distances);
+  }
+  return hough;
+}
 
 // Utility procedures
 static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);

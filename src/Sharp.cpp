@@ -3,22 +3,10 @@
 //
 
 #include "../include/Sharp.h"
-#include "../include/Line.h"
 #include <iostream>
-#include <memory>
 #include <omp.h>
 
 namespace aapp {
-
-static std::vector<std::vector<std::vector<std::unique_ptr<Line>>>>
-buildSLHT(unsigned int orientations, unsigned int distances) {
-  auto slht = std::vector<std::vector<std::vector<std::unique_ptr<Line>>>>(
-      orientations);
-  for (auto &orientation : slht) {
-    orientation.reserve(distances);
-  }
-  return slht;
-}
 
 void sharp(const std::string &testShape) {
   // Load image
@@ -69,11 +57,11 @@ void partialSLHT(const cv::Mat &testShape, SharpContext &context) {
   auto max = thetaInterval.second;
 
   auto orientations =
-      static_cast<unsigned int>((max - min) / context.thetaStep());
+      static_cast<unsigned int>((max - min) / context.thetaStep() + 1);
   auto distances =
       static_cast<unsigned int>(context.maxDist() - context.minDist() + 1);
 
-  auto slht = buildSLHT(orientations, distances);
+  auto slht = buildHough<SharpContext::Slht>(orientations, distances);
 
   for (int x = 0; x < testShape.rows; ++x) {
     for (int y = 0; y < testShape.cols; ++y) {
@@ -84,8 +72,12 @@ void partialSLHT(const cv::Mat &testShape, SharpContext &context) {
           unsigned int r = static_cast<unsigned int>(x * std::cos(theta) +
                                                      y * std::sin(theta));
 
+          // r may have negative value so we apply an offset such that the
+          // lowest possible value (context.minDist()) is indexed by 0.
+          unsigned int rIndex =
+              static_cast<unsigned int>(r + context.minDist());
           bool pointAdded = false;
-          for (auto &line : slht[t][r]) {
+          for (auto &line : slht[t][rIndex]) {
             if (line) {
               auto p = Point{x, y};
               if (line->isAdjacient(p)) {
@@ -95,7 +87,50 @@ void partialSLHT(const cv::Mat &testShape, SharpContext &context) {
             }
           }
           if (!pointAdded) {
-            slht[t][r].push_back(std::make_unique<Line>(Point{x, y}));
+            slht[t][rIndex].push_back(std::make_unique<Line>(Point{x, y}));
+          }
+        }
+      }
+    }
+  }
+}
+
+void partialSignature(const SharpContext::Slht &slht, SharpContext &context) {
+  auto processorId = omp_get_thread_num();
+
+  auto thetaInterval = context.getAnglesInterval(processorId);
+  auto min = thetaInterval.first;
+  auto max = thetaInterval.second;
+
+  auto orientations =
+      static_cast<unsigned int>((max - min) / context.thetaStep()) + 1;
+  auto distances =
+      static_cast<unsigned int>(context.maxDist() - context.minDist()) + 1;
+
+  auto acc = buildHough<SharpContext::Acc>(orientations, distances);
+  auto stirs = buildHough<SharpContext::Stirs>(orientations, distances);
+
+  for (auto theta = min; theta <= max; theta += context.thetaStep()) {
+    for (auto r = 0.0; r < distances; ++r) {
+      auto theta_i = static_cast<unsigned int>(theta);
+      auto r_i = static_cast<unsigned int>(r);
+
+      for (auto &line : slht[theta_i][r_i]) {
+        if (line && line->length() > context.lenThreshold()) {
+          acc[theta_i][r_i] = true;
+        }
+      }
+    }
+
+    for (auto r = 0.0; r < distances; ++r) {
+      unsigned int theta_i = static_cast<unsigned int>(theta);
+      unsigned int r_i = static_cast<unsigned int>(r);
+
+      if (acc[theta_i][r_i]) {
+        for (auto rPrime = r + 1; r < distances; ++r) {
+          auto rPrime_i = static_cast<unsigned int>(rPrime);
+          if (acc[theta_i][rPrime_i]) {
+            stirs[theta_i][rPrime_i - r_i] = true;
           }
         }
       }
@@ -118,7 +153,7 @@ std::pair<double, double> SharpContext::getAnglesInterval(int processorNo) {
       processorNo * _thetaStep * (_orientations / omp_get_num_threads());
   auto thetaMax =
       (processorNo + 1) * _thetaStep * (_orientations / omp_get_num_threads()) -
-      1;
+          1;
   return std::pair<double, double>(thetaMin, thetaMax);
 }
 }
