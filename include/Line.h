@@ -7,12 +7,13 @@
 
 #include <climits>
 #include <opencv/cv.hpp>
+#include "../external/easyloggingpp_v9.94.2/easylogging++.h"
 namespace aapp {
 
 /**
  * A convenient class to represent a point in a two-dimensional space.
  */
-class Point {
+class Point : public el::Loggable {
 public:
   /**
    * Default constructor. Instantiate a Point centered in (0, 0).
@@ -24,6 +25,11 @@ public:
    * @param [in] y the value of Y dimension
    */
   Point(int x, int y) : _x(x), _y(y) {}
+
+  void log(el::base::type::ostream_t &os) const {
+    os << "(" << _x << ", " << _y << ")";
+  }
+
   int _x; ///< Position on the X axis
   int _y; ///< Position on the Y axis
 };
@@ -59,10 +65,15 @@ public:
    */
   void addPoint(Point p);
 
+  const Point &getStart() const;
+  const Point &getEnd() const;
+
   /**
    * @return the length of this Line segment.
    */
   double length() const;
+
+  bool isDegenerate() const;
 
   /**
    * Tests whether \p p is adjacent to this Line.

@@ -78,4 +78,8 @@ bool Line::isAdjacient(Point p) const {
 }
 
 double Line::length() const { return (_degenerate ? 0.0 : _length); }
+
+bool Line::isDegenerate() const { return _degenerate; }
+const Point &Line::getStart() const { return _start; }
+const Point &Line::getEnd() const { return _end; }
 }
