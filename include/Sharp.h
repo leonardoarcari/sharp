@@ -15,6 +15,9 @@
 
 namespace aapp {
 
+/**
+ * @return A double long representation of pi.
+ */
 constexpr double pi() { return std::atan(1) * 4; }
 
 class ReferenceShape;
@@ -45,6 +48,12 @@ class ReferenceShape;
  *  - Orientations ~ The number of orientations a line can have given the
  *      input interval <i>[Min Theta, Max Theta]</i> and the Theta step. It
  *      equals <i>abs(MaxTheta - MinTheta)/ThetaStep</i>.
+ *
+ * A SharpContext contains some structures to carry data required by SHARP:
+ *  - Reference shapes ~ A list of ReferenceShapes of which we are testing
+ *      the matching level with the input shape.
+ *  - Scores Vault ~ A structure for exchanging partial matching scores
+ *      among threads.
  */
 class SharpContext {
 public:
@@ -80,9 +89,16 @@ public:
    */
   std::pair<double, double> getAnglesInterval(int processorNo);
 
+  /**
+   * @return Minimum Theta angle
+   */
   double minTheta() const {
     return _minTheta;
   }
+
+  /**
+   * @return Maximum Theta angle
+   */
   double maxTheta() const {
     return _maxTheta;
   }
@@ -111,17 +127,41 @@ public:
    */
   double maxDist() const { return _maxDist; }
 
-  int orientations() const {
-    return _orientations;
+  /**
+   * @return number of Orientations.
+   */
+  int orientations() const { return _orientations; }
+
+  /**
+   * @return list of available ReferenceShapes
+   */
+  const std::vector<ReferenceShape> &referenceShapes() const;
+
+  /**
+   * Add a ReferenceShape to the list of ReferenceShapes.
+   * This method accepts both lvalue and rvalue as input, \p ref is
+   * std::forwarded.
+   * @param ref ReferenceShape to add to ReferenceShapes list.
+   */
+  void addReferenceShape(ReferenceShape &&ref) {
+    _referenceShapes.push_back(std::forward<ReferenceShape>(ref));
   }
 
-  const std::vector<ReferenceShape> &referenceShapes() const;
-  void addReferenceShape(ReferenceShape &&ref) { _referenceShapes.push_back(ref); }
-
-  void sendScoreTo(std::unique_ptr<SharpContext::Score> score, int processorId) {
+  /**
+   * Moves \p score to Scores Vault at \p processorId place.
+   * @param score Score to move
+   * @param processorId Scores Vault spot where to move \p score to
+   */
+  void sendScoreTo(std::unique_ptr<SharpContext::Score> score,
+                   int processorId) {
     _scoresVault[processorId] = std::move(score);
   }
 
+  /**
+   * Moves Score located at \p processorId index in Scores Vault.
+   * @param processorId index in Scores Vault from which to read
+   * @return Score located at \p processorId
+   */
   std::unique_ptr<SharpContext::Score> receiveScore(int processorId) {
     return std::move(_scoresVault[processorId]);
   }
@@ -146,20 +186,57 @@ private:
       maxSumSinCos = std::cos(pi() / 4) + std::sin(pi() / 4);
 };
 
+/**
+ * Class representing a Reference Shape for SHARP. The purpose of a reference
+ * shape is to be compared with the input test image and to evaluate a matching
+ * score. Therefore a ReferenceShape is represented by:
+ *  - its SharpContext::Stirs signature to be compared with the test shape's one
+ *  - its file pathname
+ */
 class ReferenceShape {
 public:
   using StirsPtr = std::unique_ptr<SharpContext::Stirs>;
 
+  /**
+   * Instantiate a ReferenceShape with \p path as file pathname and empty
+   * SharpContext::Stirs signature.
+   * @param path reference shape file pathname
+   */
   explicit ReferenceShape(const std::string &path) : _path(path), _stirs() {}
+
+  /**
+   * Copy constructor that instantiates a ReferenceShape whose file pathname
+   * is \p rs one and whose SharpContext::Stirs signature is copy-constructed
+   * from \p rs one.
+   * @param rs ReferenceShape to copy from
+   */
   ReferenceShape(const ReferenceShape &rs)
       : _path(rs._path),
         _stirs(std::make_unique<SharpContext::Stirs>(*rs._stirs)) {}
-  ReferenceShape(ReferenceShape &&rs)
-      : _path(rs._path), _stirs(std::move(rs._stirs)) {}
 
+  /**
+   * Move constructor that instantiates a ReferenceShape whose file pathname
+   * is \p rs one whose SharpContext::Stirs signature is move-constructed
+   * from \p rs one.
+   * @param rs ReferenceShape to move from
+   */
+  ReferenceShape(ReferenceShape &&rs)
+      : _path(std::move(rs._path)), _stirs(std::move(rs._stirs)) {}
+
+  /**
+   * Sets this ReferenceShape's SharpContext::Stirs signature from \p stirs
+   * @param stirs new SharpContext::Stirs signature of this ReferenceShape
+   */
   void setStirs(StirsPtr stirs) { _stirs = std::move(stirs); }
+
+  /**
+   * @return a reference to this ReferenceShape's SharpContext::Stirs signature
+   */
   const StirsPtr &Stirs() const { return _stirs; }
 
+  /**
+   * @return this ReferenceShape's file pathname
+   */
   const std::string &path() const { return _path; }
 
 private:
@@ -192,8 +269,21 @@ static void participateInAdd(SharpContext &context);
  */
 static cv::Mat detectEdges(const cv::Mat &src);
 
+/**
+ * Handler for '--detect-edges' command-line option to detect edges of
+ * \p testShape and display it in a window.
+ * @param testShape
+ */
 void edgeDetectionOption(const std::string &testShape);
 
+/**
+ * Builds a two-dimensional vector of type T of size
+ * \p orientations x \p distances.
+ * @tparam T a default-constructable type
+ * @param orientations first dimension cardinality
+ * @param distances second dimension cardinality
+ * @return a std::unique_ptr owning the allocated two-dimensional vector
+ */
 template<typename T>
 static std::unique_ptr<T> buildHough(int orientations, int distances) {
 
@@ -203,11 +293,22 @@ static std::unique_ptr<T> buildHough(int orientations, int distances) {
   return std::make_unique<T>(orientations, distV(distances, lineV()));
 }
 
+/**
+ * Builds a vector of SharpContext::Score of size \p orientations.
+ * @param orientations vector cardinality
+ * @return a std::unique_ptr owning the allocated vector
+ */
 static std::unique_ptr<SharpContext::Score> buildScore(int orientations);
 
 // Utility procedures
-static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);
 
+/**
+ * Displays two windows showing \p img1 and \p img2 that close on any key
+ * pressing.
+ * @param img1 First image to display
+ * @param img2 Second image to display
+ */
+static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);
 }
 
 #endif // SHARP_SHARP_H
