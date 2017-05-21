@@ -40,9 +40,9 @@ void Line::addPoint(Point p) {
       } else {
         _end = p;
       }
-      _slope = slope(_start, _end);
       _degenerate = false;
     }
+    _slope = slope(_start, _end);
     _length = distance(_start, _end);
   }
 }

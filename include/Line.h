@@ -53,7 +53,7 @@ public:
    * @param [in] point Starting point of Line segment.
    */
   explicit Line(Point point)
-      : _start(point), _end{0, 0}, _length{0.0}, _degenerate{true} {}
+      : _start(point), _end{0, 0}, _length{0.0}, _slope{0.0}, _degenerate{true} {}
 
   /**
    * Appends or prepends Point \p p to this Line segment. Point \p p must be
