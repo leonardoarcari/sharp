@@ -17,6 +17,8 @@ namespace aapp {
 
 constexpr double pi() { return std::atan(1) * 4; }
 
+class ReferenceShape;
+
 /**
  * A SharpContext is an instance of a SHARP algorithm execution. SHARP
  * algorithm can be tuned according to a number of parameters and
@@ -49,10 +51,7 @@ public:
   using Slht = std::vector<std::vector<std::vector<std::shared_ptr<Line>>>>;
   using Acc = std::vector<std::vector<bool>>;
   using Stirs = std::vector<std::vector<bool>>;
-
-  using SlhtContent = std::vector<std::unique_ptr<Line>>;
-  using AccContent = bool;
-  using StirsContent = bool;
+  using Score = std::vector<double>;
 
   /**
    * Instantiates a SharpContext.
@@ -81,6 +80,13 @@ public:
    */
   std::pair<double, double> getAnglesInterval(int processorNo);
 
+  double minTheta() const {
+    return _minTheta;
+  }
+  double maxTheta() const {
+    return _maxTheta;
+  }
+
   /**
    * Getter for Theta step.
    * @return Theta step.
@@ -105,6 +111,21 @@ public:
    */
   double maxDist() const { return _maxDist; }
 
+  int orientations() const {
+    return _orientations;
+  }
+
+  const std::vector<ReferenceShape> &referenceShapes() const;
+  void addReferenceShape(ReferenceShape &&ref) { _referenceShapes.push_back(ref); }
+
+  void sendScoreTo(std::unique_ptr<SharpContext::Score> score, int processorId) {
+    _scoresVault[processorId] = std::move(score);
+  }
+
+  std::unique_ptr<SharpContext::Score> receiveScore(int processorId) {
+    return std::move(_scoresVault[processorId]);
+  }
+
 private:
   // SHARP parameters
   int _shapeSize;
@@ -116,18 +137,50 @@ private:
   double _lenThreshold;
   int _orientations;
 
-  // Logging
+  // Data
+  std::vector<ReferenceShape> _referenceShapes;
+  std::vector<std::unique_ptr<SharpContext::Score>> _scoresVault;
 
   // Convenient constexpr
   constexpr static double
       maxSumSinCos = std::cos(pi() / 4) + std::sin(pi() / 4);
 };
 
-void sharp(const std::string &testShape);
-static SharpContext::Slht partialSLHT(const cv::Mat &testShape,
-                                      std::shared_ptr<SharpContext> &context);
-static void partialSignature(const SharpContext::Slht &slht,
-                             std::shared_ptr<SharpContext> &context);
+class ReferenceShape {
+public:
+  using StirsPtr = std::unique_ptr<SharpContext::Stirs>;
+
+  explicit ReferenceShape(const std::string &path) : _path(path), _stirs() {}
+  ReferenceShape(const ReferenceShape &rs)
+      : _path(rs._path),
+        _stirs(std::make_unique<SharpContext::Stirs>(*rs._stirs)) {}
+  ReferenceShape(ReferenceShape &&rs)
+      : _path(rs._path), _stirs(std::move(rs._stirs)) {}
+
+  void setStirs(StirsPtr stirs) { _stirs = std::move(stirs); }
+  const StirsPtr &Stirs() const { return _stirs; }
+
+  const std::string &path() const { return _path; }
+
+private:
+  StirsPtr _stirs;
+  std::string _path;
+};
+
+void sharp(const std::string &testShape, const std::string &referencePath);
+
+static std::unique_ptr<SharpContext::Slht>
+partialSLHT(const cv::Mat &testShape, SharpContext &context);
+
+static std::unique_ptr<SharpContext::Stirs>
+partialSignature(const SharpContext::Slht &slht, SharpContext &context);
+
+static std::unique_ptr<SharpContext::Score>
+partialMatch(const SharpContext::Stirs &testStirs,
+             const SharpContext::Stirs &refStirs,
+             SharpContext &context);
+
+static void participateInAdd(SharpContext &context);
 
 // Co-routines
 
@@ -139,16 +192,18 @@ static void partialSignature(const SharpContext::Slht &slht,
  */
 static cv::Mat detectEdges(const cv::Mat &src);
 
+void edgeDetectionOption(const std::string &testShape);
+
 template<typename T>
-static T buildHough(int orientations, int distances) {
+static std::unique_ptr<T> buildHough(int orientations, int distances) {
 
   using distV = typename T::value_type;
   using lineV = typename distV::value_type;
 
-  auto hough = T(orientations, distV(distances, lineV()));
-
-  return hough;
+  return std::make_unique<T>(orientations, distV(distances, lineV()));
 }
+
+static std::unique_ptr<SharpContext::Score> buildScore(int orientations);
 
 // Utility procedures
 static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);
