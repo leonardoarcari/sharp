@@ -26,6 +26,9 @@ public:
    */
   Point(int x, int y) : _x(x), _y(y) {}
 
+  /**
+   * EasyLogging++ method to log a Point.
+   */
   void log(el::base::type::ostream_t &os) const {
     os << "(" << _x << ", " << _y << ")";
   }
@@ -65,7 +68,14 @@ public:
    */
   void addPoint(Point p);
 
+  /**
+   * @return the starting Point of this Line
+   */
   const Point &getStart() const;
+
+  /**
+   * @return the ending Point of this Line
+   */
   const Point &getEnd() const;
 
   /**
@@ -73,6 +83,10 @@ public:
    */
   double length() const;
 
+  /**
+   * @return true if this Line segment is degenerate i.e. is made by only one
+   * Point.
+   */
   bool isDegenerate() const;
 
   /**
