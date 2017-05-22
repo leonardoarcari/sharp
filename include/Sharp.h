@@ -15,12 +15,12 @@
 
 namespace aapp {
 
+class ReferenceShape;
+
 /**
  * @return A double long representation of pi.
  */
 constexpr double pi() { return std::atan(1) * 4; }
-
-class ReferenceShape;
 
 /**
  * A SharpContext is an instance of a SHARP algorithm execution. SHARP
@@ -135,7 +135,7 @@ public:
   /**
    * @return list of available ReferenceShapes
    */
-  const std::vector<ReferenceShape> &referenceShapes() const;
+  const std::vector<aapp::ReferenceShape> &referenceShapes() const;
 
   /**
    * Add a ReferenceShape to the list of ReferenceShapes.
@@ -143,8 +143,8 @@ public:
    * std::forwarded.
    * @param ref ReferenceShape to add to ReferenceShapes list.
    */
-  void addReferenceShape(ReferenceShape &&ref) {
-    _referenceShapes.push_back(std::forward<ReferenceShape>(ref));
+  void addReferenceShape(aapp::ReferenceShape &&ref) {
+    _referenceShapes.push_back(std::forward<aapp::ReferenceShape>(ref));
   }
 
   /**
@@ -178,81 +178,23 @@ private:
   int _orientations;
 
   // Data
-  std::vector<ReferenceShape> _referenceShapes;
-  std::vector<std::unique_ptr<SharpContext::Score>> _scoresVault;
+  std::vector<aapp::ReferenceShape> _referenceShapes;
+  std::vector<std::unique_ptr<aapp::SharpContext::Score>> _scoresVault;
 
   // Convenient constexpr
   constexpr static double
       maxSumSinCos = std::cos(pi() / 4) + std::sin(pi() / 4);
 };
 
-/**
- * Class representing a Reference Shape for SHARP. The purpose of a reference
- * shape is to be compared with the input test image and to evaluate a matching
- * score. Therefore a ReferenceShape is represented by:
- *  - its SharpContext::Stirs signature to be compared with the test shape's one
- *  - its file pathname
- */
-class ReferenceShape {
-public:
-  using StirsPtr = std::unique_ptr<SharpContext::Stirs>;
-
-  /**
-   * Instantiate a ReferenceShape with \p path as file pathname and empty
-   * SharpContext::Stirs signature.
-   * @param path reference shape file pathname
-   */
-  explicit ReferenceShape(const std::string &path) : _path(path), _stirs() {}
-
-  /**
-   * Copy constructor that instantiates a ReferenceShape whose file pathname
-   * is \p rs one and whose SharpContext::Stirs signature is copy-constructed
-   * from \p rs one.
-   * @param rs ReferenceShape to copy from
-   */
-  ReferenceShape(const ReferenceShape &rs)
-      : _path(rs._path),
-        _stirs(std::make_unique<SharpContext::Stirs>(*rs._stirs)) {}
-
-  /**
-   * Move constructor that instantiates a ReferenceShape whose file pathname
-   * is \p rs one whose SharpContext::Stirs signature is move-constructed
-   * from \p rs one.
-   * @param rs ReferenceShape to move from
-   */
-  ReferenceShape(ReferenceShape &&rs)
-      : _path(std::move(rs._path)), _stirs(std::move(rs._stirs)) {}
-
-  /**
-   * Sets this ReferenceShape's SharpContext::Stirs signature from \p stirs
-   * @param stirs new SharpContext::Stirs signature of this ReferenceShape
-   */
-  void setStirs(StirsPtr stirs) { _stirs = std::move(stirs); }
-
-  /**
-   * @return a reference to this ReferenceShape's SharpContext::Stirs signature
-   */
-  const StirsPtr &Stirs() const { return _stirs; }
-
-  /**
-   * @return this ReferenceShape's file pathname
-   */
-  const std::string &path() const { return _path; }
-
-private:
-  StirsPtr _stirs;
-  std::string _path;
-};
-
 void sharp(const std::string &testShape, const std::string &referencePath);
 
-static std::unique_ptr<SharpContext::Slht>
+std::unique_ptr<SharpContext::Slht>
 partialSLHT(const cv::Mat &testShape, SharpContext &context);
 
-static std::unique_ptr<SharpContext::Stirs>
+std::unique_ptr<SharpContext::Stirs>
 partialSignature(const SharpContext::Slht &slht, SharpContext &context);
 
-static std::unique_ptr<SharpContext::Score>
+std::unique_ptr<SharpContext::Score>
 partialMatch(const SharpContext::Stirs &testStirs,
              const SharpContext::Stirs &refStirs,
              SharpContext &context);
@@ -261,54 +203,9 @@ static void participateInAdd(SharpContext &context);
 
 // Co-routines
 
-/**
- * Function to compute the edges of \p src image. It exploits OpenCV
- * and Canny algorithm.
- * @param [in] src image for which to detect edges.
- * @return an image whose non-zero pixels are the edges of shapes in \p src.
- */
-static cv::Mat detectEdges(const cv::Mat &src);
-
-/**
- * Handler for '--detect-edges' command-line option to detect edges of
- * \p testShape and display it in a window.
- * @param testShape
- */
-void edgeDetectionOption(const std::string &testShape);
-
-/**
- * Builds a two-dimensional vector of type T of size
- * \p orientations x \p distances.
- * @tparam T a default-constructable type
- * @param orientations first dimension cardinality
- * @param distances second dimension cardinality
- * @return a std::unique_ptr owning the allocated two-dimensional vector
- */
-template<typename T>
-static std::unique_ptr<T> buildHough(int orientations, int distances) {
-
-  using distV = typename T::value_type;
-  using lineV = typename distV::value_type;
-
-  return std::make_unique<T>(orientations, distV(distances, lineV()));
-}
-
-/**
- * Builds a vector of SharpContext::Score of size \p orientations.
- * @param orientations vector cardinality
- * @return a std::unique_ptr owning the allocated vector
- */
-static std::unique_ptr<SharpContext::Score> buildScore(int orientations);
-
 // Utility procedures
 
-/**
- * Displays two windows showing \p img1 and \p img2 that close on any key
- * pressing.
- * @param img1 First image to display
- * @param img2 Second image to display
- */
-static void showTwoImages(const cv::Mat &img1, const cv::Mat &img2);
+
 }
 
 #endif // SHARP_SHARP_H

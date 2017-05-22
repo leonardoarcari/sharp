@@ -1,4 +1,5 @@
 #include "../include/Sharp.h"
+#include "../include/Sharp_support.h"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;

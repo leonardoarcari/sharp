@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_STL_LOGGING")
 
 # Compile
 set(EXTERNAL_FILES external/easyloggingpp_v9.94.2/easylogging++.h external/easyloggingpp_v9.94.2/easylogging++.cc)
-set(SOURCE_FILES src/main.cpp include/Sharp.h src/Sharp.cpp src/Line.cpp include/Line.h)
+set(SOURCE_FILES src/main.cpp include/Sharp.h src/Sharp.cpp src/Line.cpp include/Line.h src/Sharp_support.cpp include/Sharp_support.h)
 add_executable(sharp ${SOURCE_FILES} ${EXTERNAL_FILES})
 
 # Linking
