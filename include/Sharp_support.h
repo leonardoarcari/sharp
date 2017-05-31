@@ -7,7 +7,7 @@
 
 #include "Line.h"
 #include "Sharp.h"
-
+#include <omp.h>
 #include <memory>
 
 namespace aapp {
@@ -87,6 +87,18 @@ private:
   std::string _path;
 };
 
+class OmpLock {
+public:
+  OmpLock() { omp_init_lock(&_lock); }
+  void set() { omp_set_lock(&_lock); }
+  void unset() { omp_unset_lock(&_lock); }
+
+public:
+  virtual ~OmpLock() { omp_destroy_lock(&_lock); }
+private:
+  omp_lock_t _lock;
+};
+
 /**
  * Builds a vector of SharpContext::Score of size \p orientations.
  * @param orientations vector cardinality
@@ -108,7 +120,7 @@ std::unique_ptr<T> buildHough(int orientations, int distances) {
   using distV = typename T::value_type;
   using lineV = typename distV::value_type;
 
-  return std::make_unique<T>(orientations, distV(distances, lineV()));
+  return std::make_unique<T>(orientations, distV(distances));
 }
 
 /**

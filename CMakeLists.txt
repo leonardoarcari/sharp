@@ -18,7 +18,8 @@ if (OPENMP_FOUND)
 endif()
 
 # EasyLogging++ flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_STL_LOGGING")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DELPP_THREAD_SAFE -DELPP_STL_LOGGING")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG -DELPP_THREAD_SAFE -DELPP_STL_LOGGING")
 
 # Compile
 set(EXTERNAL_FILES external/easyloggingpp_v9.94.2/easylogging++.h external/easyloggingpp_v9.94.2/easylogging++.cc)
