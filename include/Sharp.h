@@ -16,6 +16,7 @@
 namespace aapp {
 
 class ReferenceShape;
+class OmpLock;
 
 /**
  * @return A double long representation of pi.
@@ -70,8 +71,12 @@ public:
    * @param [in] thetaStep The Theta step
    * @param [in] lenThreshold The length threshold
    */
-  SharpContext(int shapeSize, double minTheta, double maxTheta,
-               int thetaStep, double lenThreshold);
+  SharpContext(int shapeSize,
+               double minTheta,
+               double maxTheta,
+               int thetaStep,
+               double lenThreshold,
+               int threads);
 
   /**
    * Evaluates the interval of angles that processor running with Id = \p
@@ -132,6 +137,14 @@ public:
    */
   int orientations() const { return _orientations; }
 
+  int threads() const {
+    return _threads;
+  }
+
+  void setThreads(int _threads) {
+    SharpContext::_threads = _threads;
+  }
+
   /**
    * @return list of available ReferenceShapes
    */
@@ -153,18 +166,14 @@ public:
    * @param processorId Scores Vault spot where to move \p score to
    */
   void sendScoreTo(std::unique_ptr<SharpContext::Score> score,
-                   int processorId) {
-    _scoresVault[processorId] = std::move(score);
-  }
+                   int processorId);
 
   /**
    * Moves Score located at \p processorId index in Scores Vault.
    * @param processorId index in Scores Vault from which to read
    * @return Score located at \p processorId
    */
-  std::unique_ptr<SharpContext::Score> receiveScore(int processorId) {
-    return std::move(_scoresVault[processorId]);
-  }
+  std::unique_ptr<SharpContext::Score> receiveScore(int processorId);
 
 private:
   // SHARP parameters
@@ -176,17 +185,26 @@ private:
   int _thetaStep;
   double _lenThreshold;
   int _orientations;
+  int _threads;
 
   // Data
   std::vector<aapp::ReferenceShape> _referenceShapes;
-  std::vector<std::unique_ptr<aapp::SharpContext::Score>> _scoresVault;
+  std::vector<std::pair<std::unique_ptr<aapp::SharpContext::Score>, bool>> _scoresVault;
+  std::vector<aapp::OmpLock> _locks;
 
   // Convenient constexpr
   constexpr static double
       maxSumSinCos = std::cos(pi() / 4) + std::sin(pi() / 4);
 };
 
-void sharp(const std::string &testShape, const std::string &referencePath);
+void sharp(const std::string &testShape,
+           const std::string &referencePath,
+           int shapeSize,
+           double minTheta,
+           double maxTheta,
+           int thetaStep,
+           double lenThresh,
+           int threads);
 
 std::unique_ptr<SharpContext::Slht>
 partialSLHT(const cv::Mat &testShape, SharpContext &context);
@@ -199,13 +217,9 @@ partialMatch(const SharpContext::Stirs &testStirs,
              const SharpContext::Stirs &refStirs,
              SharpContext &context);
 
-static void participateInAdd(SharpContext &context);
-
-// Co-routines
-
-// Utility procedures
-
-
+std::unique_ptr<SharpContext::Score>
+participateInAdd(std::unique_ptr<SharpContext::Score> score,
+                 SharpContext &context);
 }
 
 #endif // SHARP_SHARP_H
