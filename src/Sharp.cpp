@@ -200,10 +200,10 @@ std::unique_ptr<SharpContext::Slht> partialSLHT(const cv::Mat &testShape,
              << distances;
   auto slht = buildHough<SharpContext::Slht>(context.orientations(), distances);
 
-  for (int x = 0; x < testShape.rows; ++x) {
-    for (int y = 0; y < testShape.cols; ++y) {
+  for (int x = 0; x < testShape.cols; ++x) {
+    for (int y = 0; y < testShape.rows; ++y) {
       if (testShape.at<unsigned char>(x, y) != 0) {
-        for (double theta = min; theta <= max; theta += context.thetaStep()) {
+        for (double theta = min; theta < max; theta += context.thetaStep()) {
           auto theta_rad = theta * pi() / 180;
           auto t = d2i(theta / context.thetaStep());
           auto r = d2i(x * std::cos(theta_rad) + y * std::sin(theta_rad));
