@@ -58,10 +58,10 @@ bool Line::isAdjacient(Point p) const {
         return true;
       }
     } else if (p._x == _end._x + 1) { // Test if p is new _end
-      if (p._y == posSlope ? (_start._y + _slope) : (_start._y - _slope)) {
+      if (p._y == posSlope ? (_end._y + _slope) : (_end._y - _slope)) {
         return true;
       }
-    } else if (_slope == std::abs(DBL_MAX) &&
+    } else if (_slope == std::abs(DBL_MAX) && p._x == _start._x && p._x == _end._x &&
                (p._y == _start._y + 1 || p._y == _end._y - 1)) {
       // In case of a vertical line (approximated with _slope == DBL_MAX) a
       // point is adjacent if it comes right before _start (higher y value) or
