@@ -1,12 +1,13 @@
 #include "../include/Sharp.h"
-#include "../include/Sharp_support.h"
+#include "../include/SharpSupport.h"
+#include "../test/SharpTest.h"
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
 std::tuple<po::variables_map, po::options_description>
 buildParser(int argc, char **argv) {
-  auto run_desc = "Run SHARP algorithm:";
+  auto run_desc = "Run SHARP algorithm";
   auto run = po::options_description(run_desc);
 
   auto refShape_desc = "Path of reference images (Default: working directory)";
@@ -29,7 +30,7 @@ buildParser(int argc, char **argv) {
       ("test-shape,t", po::value<std::string>(), testShape_desc)
       ;
 
-  auto demo_desc = "Demo options:";
+  auto demo_desc = "Demo options";
   auto demo = po::options_description(demo_desc);
 
   auto help_desc = "Print this help message";
@@ -38,6 +39,7 @@ buildParser(int argc, char **argv) {
   demo.add_options()
       ("help,h", help_desc)
       ("detect-edges,e", detectEdges_desc)
+      ("test-sequential", "Simulate parallel SHARP sequentially")
       ;
 
   auto testShape_pos = po::positional_options_description();
@@ -101,6 +103,18 @@ int main(int argc, char **argv) {
 
     if (vm.count("threads")) {
       threads = vm["threads"].as<int>();
+    }
+
+    if (vm.count("test-sequential")) {
+      sharpSequential(testShape,
+                      refShapes,
+                      shapeSize,
+                      minTheta,
+                      maxTheta,
+                      thetaStep,
+                      lenThresh,
+                      threads);
+      return 0;
     }
 
     aapp::sharp(testShape,
