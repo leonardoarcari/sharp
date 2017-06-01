@@ -189,7 +189,8 @@ private:
 
   // Data
   std::vector<aapp::ReferenceShape> _referenceShapes;
-  std::vector<std::pair<std::unique_ptr<aapp::SharpContext::Score>, bool>> _scoresVault;
+  std::vector<std::pair<std::unique_ptr<aapp::SharpContext::Score>, bool>>
+      _scoresVault;
   std::vector<aapp::OmpLock> _locks;
 
   // Convenient constexpr
@@ -207,19 +208,27 @@ void sharp(const std::string &testShape,
            int threads);
 
 std::unique_ptr<SharpContext::Slht>
-partialSLHT(const cv::Mat &testShape, SharpContext &context);
+partialSLHT(const cv::Mat &testShape,
+            SharpContext &context,
+            int processorId);
 
 std::unique_ptr<SharpContext::Stirs>
-partialSignature(const SharpContext::Slht &slht, SharpContext &context);
+partialSignature(const SharpContext::Slht &slht,
+                 SharpContext &context,
+                 int processorId);
 
 std::unique_ptr<SharpContext::Score>
 partialMatch(const SharpContext::Stirs &testStirs,
              const SharpContext::Stirs &refStirs,
-             SharpContext &context);
+             SharpContext &context,
+             int processorId);
 
 std::unique_ptr<SharpContext::Score>
-participateInAdd(std::unique_ptr<SharpContext::Score> score,
-                 SharpContext &context);
+participateInAdd(std::unique_ptr<
+    SharpContext::Score> score, SharpContext &context, int processorId);
+
+void buildReferenceDB(const std::string &refPath,
+                      SharpContext &context);
 }
 
 #endif // SHARP_SHARP_H

@@ -2,10 +2,9 @@
 // Created by leonardoarcari on 22/05/17.
 //
 
-#include "../include/Sharp_support.h"
+#include "../include/SharpSupport.h"
 
 #include <boost/filesystem.hpp>
-#include <chrono>
 #include <iomanip>
 
 namespace aapp {

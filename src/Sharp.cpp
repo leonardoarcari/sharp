@@ -3,7 +3,7 @@
 //
 
 #include "../include/Sharp.h"
-#include "../include/Sharp_support.h"
+#include "../include/SharpSupport.h"
 
 #include <boost/filesystem.hpp>
 #include <iomanip>
@@ -55,10 +55,10 @@ static void buildReference(const std::string &refShape, SharpContext &context) {
   auto binaryTShape = detectEdges(tshape);
 
   // Compute partial shlt
-  auto slht = partialSLHT(binaryTShape, context);
+  auto slht = partialSLHT(binaryTShape, context, 0);
 
   // Compute partial signature
-  auto stirs = partialSignature(*slht, context);
+  auto stirs = partialSignature(*slht, context, 0);
 
   auto ref = ReferenceShape(refShape);
   ref.setStirs(std::move(stirs));
@@ -66,8 +66,7 @@ static void buildReference(const std::string &refShape, SharpContext &context) {
   context.addReferenceShape(std::move(ref));
 }
 
-static void buildReferenceDB(const std::string &refPath,
-                             SharpContext &context) {
+void buildReferenceDB(const std::string &refPath, SharpContext &context) {
   using namespace boost::filesystem;
 
   int refsNo = 0;
@@ -112,8 +111,6 @@ static void buildReferenceDB(const std::string &refPath,
   context.setThreads(oldThreads);
 }
 
-
-
 void sharp(const std::string &testShape, const std::string &referencePath,
            int shapeSize, double minTheta, double maxTheta, int thetaStep,
            double lenThresh, int threads) {
@@ -131,7 +128,6 @@ void sharp(const std::string &testShape, const std::string &referencePath,
   auto binaryTShape = detectEdges(tshape);
 
 // Debugging purpose
-// showTwoImages(tshape, binaryTShape);
 
 #pragma omp parallel default(shared) shared(context, binaryTShape)
   {
@@ -143,19 +139,18 @@ void sharp(const std::string &testShape, const std::string &referencePath,
     }
 
     // Compute partial shlt
-    auto slht = partialSLHT(binaryTShape, *context);
-    //nonDegenerateLines(*slht);
+    auto slht = partialSLHT(binaryTShape, *context, omp_get_thread_num());
 
     // Compute partial signature
-    auto stirs = partialSignature(*slht, *context);
-    // stirsPoints(*stirs);
+    auto stirs = partialSignature(*slht, *context, omp_get_thread_num());
 
-    // #pragma omp barrier
     // Iterate over reference shapes and match
     for (auto &ref : context->referenceShapes()) {
-      auto score = partialMatch(*stirs, *ref.Stirs(), *context);
+      auto score =
+          partialMatch(*stirs, *ref.Stirs(), *context, omp_get_thread_num());
       LOG(DEBUG) << "Matching score for " << ref.path() << "\n  " << *score;
-      score = participateInAdd(std::move(score), *context);
+      score =
+          participateInAdd(std::move(score), *context, omp_get_thread_num());
       if (omp_get_thread_num() == context->threads() - 1) {
         auto max = 0.0;
         auto max_index = 0;
@@ -183,10 +178,8 @@ void sharp(const std::string &testShape, const std::string &referencePath,
   }
 }
 
-std::unique_ptr<SharpContext::Slht> partialSLHT(const cv::Mat &testShape,
-                                                SharpContext &context) {
-  auto processorId = omp_get_thread_num();
-
+std::unique_ptr<SharpContext::Slht>
+partialSLHT(const cv::Mat &testShape, SharpContext &context, int processorId) {
   auto thetaInterval = context.getAnglesInterval(processorId);
   auto min = thetaInterval.first;
   auto max = thetaInterval.second;
@@ -202,41 +195,36 @@ std::unique_ptr<SharpContext::Slht> partialSLHT(const cv::Mat &testShape,
 
   for (int x = 0; x < testShape.cols; ++x) {
     for (int y = 0; y < testShape.rows; ++y) {
-      if (testShape.at<unsigned char>(x, y) != 0) {
-        for (double theta = min; theta < max; theta += context.thetaStep()) {
-          auto theta_rad = theta * pi() / 180;
+      auto pixel = testShape.at<cv::Vec3b>(x, y);
+      if (pixel[0] != 0 && pixel[1] != 0 && pixel[2] != 0) {
+        for (double theta = min; theta <= max; theta += context.thetaStep()) {
           auto t = d2i(theta / context.thetaStep());
+          auto theta_rad = t * context.thetaStep() * pi() / 180;
           auto r = d2i(x * std::cos(theta_rad) + y * std::sin(theta_rad));
 
           // r may have negative value so we apply an offset such that the
           // lowest possible value (context.minDist()) is indexed by 0.
           auto rIndex = d2i(r + std::abs(context.minDist()));
-          bool appendedPoint = false;
-          auto &slht_ref = *slht;
+
           for (auto &line : (*slht)[t][rIndex]) {
-            if (line) {
-              auto p = Point{x, y};
-              if (line->isAdjacient(p)) {
-                auto &l = *line;
-                l.addPoint(p);
-                appendedPoint = true;
-              }
+            auto p = Point{x, y};
+            if (line->isAdjacient(p)) {
+              line->addPoint(p);
             }
           }
-          if (!appendedPoint) {
-            (*slht)[t][rIndex].push_back(std::make_shared<Line>(Point{x, y}));
-          }
+
+          (*slht)[t][rIndex].push_back(std::make_shared<Line>(Point{x, y}));
         }
       }
     }
   }
-
+  
   return slht;
 }
 
 std::unique_ptr<SharpContext::Stirs>
-partialSignature(const SharpContext::Slht &slht, SharpContext &context) {
-  auto processorId = omp_get_thread_num();
+partialSignature(const SharpContext::Slht &slht, SharpContext &context,
+                 int processorId) {
 
   auto thetaInterval = context.getAnglesInterval(processorId);
   auto min = thetaInterval.first;
@@ -283,9 +271,8 @@ partialSignature(const SharpContext::Slht &slht, SharpContext &context) {
 
 std::unique_ptr<SharpContext::Score>
 partialMatch(const SharpContext::Stirs &testStirs,
-             const SharpContext::Stirs &refStirs, SharpContext &context) {
-
-  auto processorId = omp_get_thread_num();
+             const SharpContext::Stirs &refStirs, SharpContext &context,
+             int processorId) {
 
   auto thetaInterval = context.getAnglesInterval(processorId);
   auto min = thetaInterval.first;
@@ -329,9 +316,8 @@ partialMatch(const SharpContext::Stirs &testStirs,
 
 std::unique_ptr<SharpContext::Score>
 participateInAdd(std::unique_ptr<SharpContext::Score> score,
-                 SharpContext &context) {
+                 SharpContext &context, int processorId) {
 
-  auto processorId = omp_get_thread_num();
   auto logP = d2i((std::log2(context.threads())));
 
   auto localScore = std::move(score);
@@ -421,9 +407,29 @@ std::pair<double, double> SharpContext::getAnglesInterval(int processorNo) {
   double thetaMax =
       ((processorNo + 1) * _thetaStep * _orientations / _threads) - 1.0;
 
-  // LOG(DEBUG) << "Min: " << thetaMin << " Max: " << thetaMax << " ProcessorNo:
-  // " << processorNo << " ThetaStep: " << _thetaStep << " Orientations: " <<
-  // _orientations << " Threads: " << _threads;
+  if (processorNo > 0) {
+    double prevMax =
+        ((processorNo * _thetaStep * _orientations) / _threads) - 1;
+    int tMin = static_cast<int>(thetaMin / _thetaStep);
+    int tPrevMax = static_cast<int>(prevMax / _thetaStep);
+
+    if (tPrevMax == tMin) {
+      thetaMin =
+          thetaMin + _thetaStep - (static_cast<int>(thetaMin) % _thetaStep);
+    }
+  }
+
+  if (processorNo < _threads - 1) {
+    double nextMin =
+        ((processorNo + 1) * _thetaStep * _orientations / _threads) - 1.0;
+    int tMax = static_cast<int>(thetaMax / _thetaStep);
+    int tNextMin = static_cast<int>(nextMin / _thetaStep);
+
+    if (tMax == tNextMin) {
+      thetaMax = thetaMax + _thetaStep -
+                 (static_cast<int>(thetaMax) % _thetaStep) - 1.0;
+    }
+  }
 
   return std::pair<double, double>(thetaMin, thetaMax);
 }
