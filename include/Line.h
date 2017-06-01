@@ -33,6 +33,10 @@ public:
     os << "(" << _x << ", " << _y << ")";
   }
 
+  bool operator==(const Point& op) const {
+    return _x == op._x && _y == op._y;
+  }
+
   int _x; ///< Position on the X axis
   int _y; ///< Position on the Y axis
 };
@@ -106,6 +110,7 @@ public:
    */
   bool isAdjacient(Point p) const;
 
+  bool operator==(const Line& ol) const;
 private:
   Point _start;
   Point _end;
@@ -113,6 +118,8 @@ private:
   double _length;
   bool _degenerate;
   constexpr static double sqrt2 = std::sqrt(2);
+
+  friend std::ostream& operator<<(std::ostream& os, const aapp::Line& obj);
 };
 
 /**

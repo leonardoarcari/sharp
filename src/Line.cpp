@@ -82,4 +82,21 @@ double Line::length() const { return (_degenerate ? 0.0 : _length); }
 bool Line::isDegenerate() const { return _degenerate; }
 const Point &Line::getStart() const { return _start; }
 const Point &Line::getEnd() const { return _end; }
+
+std::ostream& operator<<(std::ostream& os, const aapp::Line& obj) {
+  os << "(Start: " << obj._start << ", End: " << obj._end << ", Slope: " << obj._slope << ", Length: " << obj._length << ")";
+  return os;
+}
+
+bool Line::operator==(const Line &ol) const {
+  return _start == ol._start &&
+      _end == ol._end &&
+      _slope == ol._slope &&
+      _length == ol._length;
+}
+
+std::ostream& operator<<(std::ostream& os, const aapp::Point& obj) {
+  os << "(" << obj._x << ", " << obj._y << ")";
+  return os;
+}
 }
