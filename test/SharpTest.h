@@ -7,7 +7,7 @@
 
 #include <string>
 #include <sstream>
-#include <bits/unique_ptr.h>
+#include <memory>
 
 #include "../include/Sharp.h"
 

@@ -24,7 +24,7 @@ buildParser(int argc, char **argv) {
       ("min-theta", po::value<double>()->default_value(0.0), minTheta_desc)
       ("max-theta", po::value<double>()->default_value(180.0), maxTheta_desc)
       ("theta-step", po::value<int>()->default_value(5), thetaStep_desc)
-      ("length-thresh", po::value<double>()->default_value(1.0), lenThresh_desc)
+      ("length-thresh", po::value<double>()->default_value(2.0), lenThresh_desc)
       ("threads", po::value<int>(), numThreads_desc)
       ("reference-shapes,r", po::value<std::string>(), refShape_desc)
       ("test-shape,t", po::value<std::string>(), testShape_desc)

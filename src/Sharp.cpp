@@ -161,6 +161,7 @@ void sharp(const std::string &testShape, const std::string &referencePath,
           }
         }
 
+        //LOG(INFO) << "Final score: " << *score;
         LOG(INFO) << ref.path() << "\n  Peak found at [theta = "
                   << max_index * context->thetaStep() << ", score = " << max
                   << "]";
@@ -218,7 +219,7 @@ partialSLHT(const cv::Mat &testShape, SharpContext &context, int processorId) {
       }
     }
   }
-  
+
   return slht;
 }
 
@@ -355,15 +356,15 @@ static void configureLogger() {
 
   auto defaultConf = Configurations();
   defaultConf.setToDefault();
-  defaultConf.setGlobally(ConfigurationType::ToFile, "true");
+  defaultConf.setGlobally(ConfigurationType::ToFile, "false");
 
-  auto now = system_clock::to_time_t(system_clock::now());
-  auto timestamp = std::stringstream();
-  timestamp << std::put_time(std::localtime(&now), "%T");
-  defaultConf.setGlobally(ConfigurationType::Filename,
-                          "/tmp/logs/sharp_" + timestamp.str() + ".log");
+  //auto now = system_clock::to_time_t(system_clock::now());
+  //auto timestamp = std::stringstream();
+  //timestamp << std::put_time(std::localtime(&now), "%T");
+  //defaultConf.setGlobally(ConfigurationType::Filename,
+  //                        "/tmp/logs/sharp_" + timestamp.str() + ".log");
   defaultConf.setGlobally(ConfigurationType::Enabled, "true");
-  defaultConf.setGlobally(ConfigurationType::SubsecondPrecision, "6");
+  //defaultConf.setGlobally(ConfigurationType::SubsecondPrecision, "6");
 
   Helpers::installCustomFormatSpecifier(
       CustomFormatSpecifier("%omp_tid", [](auto m) {
