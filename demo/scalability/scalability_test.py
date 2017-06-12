@@ -8,9 +8,9 @@ import re
 import subprocess
 from time import sleep
 
-MAGIC_NUMBER = 15
+MAGIC_NUMBER = 10
 
-def plotExecutionTime(shapePath, xValues, yValues):
+def plotExecutionTime(shapePath, xValues, yValues, numThreads):
 	newX, newY = zip(*sorted(zip(xValues, yValues)))
 	maxX = newX[-1]
 	minY = newY[-1]
@@ -18,7 +18,7 @@ def plotExecutionTime(shapePath, xValues, yValues):
 
 	print(newY)
 
-	figName = shapePath.stem + '_plot' + '.png'
+	figName = shapePath.stem + '_plot' + '_' + str(numThreads) + '.png'
 
 	fig, ax = plt.subplots()
 	for axis in [ax.xaxis, ax.yaxis]:
@@ -73,7 +73,7 @@ def runScalabilityTest(refShapes, testShapes, maxThreads, shapeSize, minTheta, m
 						time = time.group()[:-2]
 						sum_time += float(time)
 			statistics[ts.name][t] = sum_time/MAGIC_NUMBER
-		plotExecutionTime(ts, list(statistics[ts.name].keys()), list(statistics[ts.name].values()))
+		plotExecutionTime(ts, list(statistics[ts.name].keys()), list(statistics[ts.name].values()), maxThreads)
 
 	print(statistics)
 
