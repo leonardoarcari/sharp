@@ -358,13 +358,7 @@ static void configureLogger() {
   defaultConf.setToDefault();
   defaultConf.setGlobally(ConfigurationType::ToFile, "false");
 
-  //auto now = system_clock::to_time_t(system_clock::now());
-  //auto timestamp = std::stringstream();
-  //timestamp << std::put_time(std::localtime(&now), "%T");
-  //defaultConf.setGlobally(ConfigurationType::Filename,
-  //                        "/tmp/logs/sharp_" + timestamp.str() + ".log");
   defaultConf.setGlobally(ConfigurationType::Enabled, "true");
-  //defaultConf.setGlobally(ConfigurationType::SubsecondPrecision, "6");
 
   Helpers::installCustomFormatSpecifier(
       CustomFormatSpecifier("%omp_tid", [](auto m) {
