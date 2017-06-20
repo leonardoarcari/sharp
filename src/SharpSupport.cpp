@@ -1,5 +1,7 @@
 //
-// Created by leonardoarcari on 22/05/17.
+// Author: Leonardo Arcari
+// Mail: leonardo1[dot]arcari[at]gmail[dot]com
+// Date: 22/05/17.
 //
 
 #include "../include/SharpSupport.h"

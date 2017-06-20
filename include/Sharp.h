@@ -1,5 +1,7 @@
 //
-// Created by leonardoarcari on 17/05/17.
+// Author: Leonardo Arcari
+// Mail: leonardo1[dot]arcari[at]gmail[dot]com
+// Date: 17/05/17.
 //
 
 #ifndef SHARP_SHARP_H

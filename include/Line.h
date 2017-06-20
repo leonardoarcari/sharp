@@ -1,7 +1,8 @@
 //
-// Created by leonardoarcari on 18/05/17.
+// Author: Leonardo Arcari
+// Mail: leonardo1[dot]arcari[at]gmail[dot]com
+// Date: 18/05/17.
 //
-
 #ifndef SHARP_LINE_H
 #define SHARP_LINE_H
 
