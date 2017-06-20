@@ -33,6 +33,11 @@ public:
     os << "(" << _x << ", " << _y << ")";
   }
 
+  /**
+   * Equality operator overloading.
+   * @param [in] op Point which to compare *this* Point to.
+   * @return True if *this* Point and \p op have same _x_ and _y_ coordinates.
+   */
   bool operator==(const Point& op) const {
     return _x == op._x && _y == op._y;
   }
@@ -110,6 +115,12 @@ public:
    */
   bool isAdjacient(Point p) const;
 
+  /**
+   * Equality operator overloading.
+   * @param [in] ol Line which to compare *this* Line to.
+   * @return True if *this* Line and \p ol have same _start_ and _end_ points,
+   *         same _slope_ and same _length_. False otherwise.
+   */
   bool operator==(const Line& ol) const;
 private:
   Point _start;

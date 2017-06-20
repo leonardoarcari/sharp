@@ -5,6 +5,10 @@
 
 namespace po = boost::program_options;
 
+// This source file builds a command line options parsers using
+// boost::program_options. Then the main function calls the right routines
+// according to those options and parameters.
+
 std::tuple<po::variables_map, po::options_description>
 buildParser(int argc, char **argv) {
   auto run_desc = "Run SHARP algorithm";

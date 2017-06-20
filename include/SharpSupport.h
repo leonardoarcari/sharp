@@ -87,13 +87,29 @@ private:
   std::string _path;
 };
 
+/**
+ * RAII wrapper to OpenMP library's omp_lock_t. When a OmpLock object is
+ * constructed an omp_lock_t is initialized. OmpLock class exposes methods
+ * that wrap plain C function calls of OpenMP. Finally, when the object goes
+ * out of scope, on destruction the omp_lock_t is destroyed.
+ */
 class OmpLock {
 public:
+  /**
+   * Constructor. Initializes internal omp_lock_t.
+   */
   OmpLock() { omp_init_lock(&_lock); }
+  /**
+   * Sets the OmpLock by calling omp_set_lock()
+   */
   void set() { omp_set_lock(&_lock); }
+  /**
+   * Unsets the OmpLock by calling omp_unset_lock()
+   */
   void unset() { omp_unset_lock(&_lock); }
-
-public:
+  /**
+   * Destructor. Destroys internal omp_lock_t by calling omp_destroy_lock()
+   */
   virtual ~OmpLock() { omp_destroy_lock(&_lock); }
 private:
   omp_lock_t _lock;
